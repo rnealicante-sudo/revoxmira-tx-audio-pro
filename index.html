@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>RevoxMira TX Audio Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.5/peerjs.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+    
+    .glass {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    
+    .mic-pulse {
+      animation: micPulse 1.8s infinite ease-in-out;
+    }
+    
+    @keyframes micPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.18); }
+    }
+    
+    input[type="range"] {
+      accent-color: rgb(139 92 246);
+    }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-200 min-h-screen flex items-center justify-center p-4 md:p-6 dark">
+  <div class="max-w-lg w-full space-y-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 rounded-3xl flex items-center justify-center shadow-xl">
+          <i class="fa-solid fa-microphone text-white text-3xl"></i>
+        </div>
+        <div>
+          <h1 class="text-4xl font-bold tracking-tighter">RevoxMira</h1>
+          <p class="text-violet-400 text-sm font-semibold">TX Audio Pro</p>
+        </div>
+      </div>
+      <button onclick="toggleTheme()" class="p-3 rounded-2xl hover:bg-zinc-900 transition-all text-xl">
+        <i id="theme-icon" class="fa-solid fa-moon"></i>
+      </button>
+    </div>
+
+    <!-- Main Card -->
+    <div class="glass border border-zinc-700/50 rounded-3xl p-8 shadow-2xl">
+      
+      <!-- Mode Selector -->
+      <div class="flex bg-zinc-900/80 rounded-2xl p-1 mb-8">
+        <button onclick="setMode(true)" id="btn-transmisor" 
+          class="flex-1 py-4 text-sm font-semibold rounded-xl transition-all">🎤 Transmisor</button>
+        <button onclick="setMode(false)" id="btn-receptor" 
+          class="flex-1 py-4 text-sm font-semibold rounded-xl transition-all">🎧 Receptor</button>
+      </div>
+
+      <!-- Mic Selector -->
+      <div class="mb-6">
+        <label class="block text-zinc-400 text-sm mb-2 font-medium">Micrófono</label>
+        <select id="micSelect" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-5 py-4 focus:border-violet-500 focus:outline-none text-white">
+        </select>
+      </div>
+
+      <!-- Quality Selector -->
+      <div class="mb-6">
+        <label class="block text-zinc-400 text-sm mb-2 font-medium">Calidad de audio</label>
+        <select id="qualitySelect" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-5 py-4 focus:border-violet-500 focus:outline-none">
+          <option value="high">Alta (48kHz Estéreo)</option>
+          <option value="medium" selected>Media (44.1kHz Estéreo)</option>
+          <option value="low">Baja (32kHz Mono)</option>
+        </select>
+      </div>
+
+      <!-- Gain Control -->
+      <div id="gain-container" class="hidden mb-6">
+        <div class="flex justify-between text-xs text-zinc-400 mb-1.5">
+          <span>Nivel de entrada del micrófono (Gain)</span>
+          <span id="gain-value">1.0x</span>
+        </div>
+        <input type="range" id="gain-slider" min="0" max="3" step="0.05" value="1" class="w-full">
+      </div>
+
+      <!-- Volume Meter -->
+      <div id="volume-container" class="hidden mb-6">
+        <div class="flex justify-between text-xs text-zinc-400 mb-1.5">
+          <span>Volumen en tiempo real</span>
+          <span id="volume-value">0%</span>
+        </div>
+        <div class="h-2.5 bg-zinc-800 rounded-full overflow-hidden">
+          <div id="volume-bar" class="h-full w-0 bg-gradient-to-r from-emerald-400 via-cyan-400 to-violet-400 rounded-full"></div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="flex gap-3">
+        <button onclick="iniciar()" id="start-btn"
+          class="flex-1 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 py-4 rounded-2xl font-semibold text-lg flex items-center justify-center gap-3 transition-all">
+          <i class="fa-solid fa-broadcast-tower"></i>
+          <span id="btn-text">Iniciar Transmisión</span>
+        </button>
+
+        <button onclick="toggleMute()" id="mute-btn" 
+          class="hidden w-14 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-2xl transition-all items-center justify-center">
+          <i id="mute-icon" class="fa-solid fa-microphone text-2xl"></i>
+        </button>
+
+        <button onclick="detener()" 
+          class="w-14 bg-zinc-800 hover:bg-red-900 border border-zinc-700 hover:border-red-500 rounded-2xl transition-all flex items-center justify-center">
+          <i class="fa-solid fa-circle-stop text-2xl"></i>
+        </button>
+      </div>
+
+      <!-- Share Link -->
+      <div id="share-container" class="hidden mt-6">
+        <button onclick="copiarEnlace()" 
+          class="w-full flex items-center justify-center gap-3 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 py-3 rounded-2xl text-sm font-medium transition-all">
+          <i class="fa-solid fa-share-nodes"></i>
+          Copiar enlace para oyentes
+        </button>
+        <p id="share-status" class="text-center text-xs text-emerald-400 mt-2 min-h-[20px]"></p>
+      </div>
+
+      <!-- Status -->
+      <div id="status" class="mt-8 min-h-[72px] text-center text-sm font-medium px-6 py-5 rounded-2xl border border-transparent transition-all"></div>
+
+      <!-- Live Indicator -->
+      <div id="live-indicator" class="hidden flex items-center justify-center gap-3 text-emerald-400 text-sm font-medium mt-4">
+        <div class="w-3.5 h-3.5 bg-emerald-500 rounded-full mic-pulse"></div>
+        <span>TRANSMITIENDO EN VIVO • RevoxMira TX Audio Pro</span>
+      </div>
+    </div>
+
+    <div class="text-center text-zinc-500 text-xs">
+      Compatible con iPhone (Safari) • Android • WebRTC • 100% Gratis
+    </div>
+  </div>
+
+  <script>
+    let peer, processedStream, audioContext, gainNode, analyser, animationFrame;
+    let isBroadcasterMode = true;
+    let isMuted = false;
+    let currentGain = 1.0;
+
+    function setMode(isBroadcaster) {
+      isBroadcasterMode = isBroadcaster;
+      document.getElementById("btn-transmisor").classList.toggle("bg-zinc-800", !isBroadcaster);
+      document.getElementById("btn-receptor").classList.toggle("bg-zinc-800", isBroadcaster);
+      document.getElementById("btn-text").textContent = isBroadcaster ? "Iniciar Transmisión" : "Conectar como Receptor";
+      
+      document.getElementById("gain-container").classList.toggle("hidden", !isBroadcaster);
+      document.getElementById("volume-container").classList.toggle("hidden", !isBroadcaster);
+      document.getElementById("mute-btn").classList.toggle("hidden", !isBroadcaster);
+      document.getElementById("share-container").classList.toggle("hidden", !isBroadcaster);
+    }
+
+    async function listarMicrofonos() {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const select = document.getElementById("micSelect");
+        select.innerHTML = '<option value="">Micrófono predeterminado del sistema</option>';
+        
+        devices.forEach(device => {
+          if (device.kind === "audioinput") {
+            const opt = document.createElement("option");
+            opt.value = device.deviceId;
+            opt.text = device.label || `Micrófono ${select.length}`;
+            select.appendChild(opt);
+          }
+        });
+      } catch (e) {}
+    }
+
+    function getAudioConstraints() {
+      const q = document.getElementById("qualitySelect").value;
+      return {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+        sampleRate: q === "high" ? 48000 : q === "medium" ? 44100 : 32000,
+        channelCount: q === "low" ? 1 : 2
+      };
+    }
+
+    function setupAudioProcessing(rawStream) {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const source = audioContext.createMediaStreamSource(rawStream);
+      
+      gainNode = audioContext.createGain();
+      gainNode.gain.value = currentGain;
+      
+      analyser = audioContext.createAnalyser();
+      analyser.fftSize = 128;
+
+      source.connect(gainNode);
+      gainNode.connect(analyser);
+
+      const destination = audioContext.createMediaStreamDestination();
+      gainNode.connect(destination);
+      
+      processedStream = destination.stream;
+      return processedStream;
+    }
+
+    function startVolumeMeter() {
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      function update() {
+        analyser.getByteFrequencyData(dataArray);
+        let sum = 0;
+        for (let val of dataArray) sum += val;
+        const percent = Math.min(100, Math.floor((sum / dataArray.length) * 1.8));
+        
+        document.getElementById("volume-bar").style.width = percent + "%";
+        document.getElementById("volume-value").textContent = percent + "%";
+        animationFrame = requestAnimationFrame(update);
+      }
+      update();
+    }
+
+    // Gain Slider
+    document.addEventListener('input', e => {
+      if (e.target.id === 'gain-slider') {
+        currentGain = parseFloat(e.target.value);
+        document.getElementById("gain-value").textContent = currentGain.toFixed(1) + "x";
+        if (gainNode) gainNode.gain.value = currentGain;
+      }
+    });
+
+    function toggleMute() {
+      isMuted = !isMuted;
+      if (processedStream) {
+        processedStream.getAudioTracks().forEach(track => track.enabled = !isMuted);
+      }
+      const icon = document.getElementById("mute-icon");
+      icon.classList.toggle("fa-microphone", !isMuted);
+      icon.classList.toggle("fa-microphone-slash", isMuted);
+    }
+
+    async function iniciar() {
+      const statusEl = document.getElementById("status");
+      const micId = document.getElementById("micSelect").value;
+      const liveIndicator = document.getElementById("live-indicator");
+
+      try {
+        statusEl.textContent = "Accediendo al micrófono...";
+        
+        const rawStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            deviceId: micId ? { exact: micId } : undefined,
+            ...getAudioConstraints()
+          }
+        });
+
+        processedStream = setupAudioProcessing(rawStream);
+        if (isBroadcasterMode) startVolumeMeter();
+
+        peer = new Peer(isBroadcasterMode ? "emisora" : "receptor");
+
+        peer.on("open", () => {
+          statusEl.innerHTML = `Conectado como <span class="text-violet-400">${isBroadcasterMode ? 'TRANSMISOR' : 'RECEPTOR'}</span>`;
+        });
+
+        if (isBroadcasterMode) {
+          peer.on("open", () => {
+            peer.call("receptor", processedStream);
+            liveIndicator.classList.remove("hidden");
+            statusEl.textContent = "📡 Transmitiendo en alta calidad...";
+          });
+        } else {
+          peer.on("call", call => {
+            call.answer();
+            call.on("stream", remoteStream => {
+              const audio = new Audio();
+              audio.srcObject = remoteStream;
+              audio.play().catch(() => {});
+              liveIndicator.classList.remove("hidden");
+              statusEl.textContent = "🎧 Reproduciendo en directo";
+            });
+          });
+        }
+      } catch (err) {
+        statusEl.textContent = err.name === "NotAllowedError" 
+          ? "❌ Permiso de micrófono denegado por el navegador" 
+          : "❌ Error: " + err.message;
+      }
+    }
+
+    function detener() {
+      if (processedStream) processedStream.getTracks().forEach(t => t.stop());
+      if (audioContext) audioContext.close();
+      if (peer) peer.destroy();
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+
+      document.getElementById("status").textContent = "Transmisión detenida";
+      document.getElementById("live-indicator").classList.add("hidden");
+      document.getElementById("volume-bar").style.width = "0%";
+    }
+
+    function copiarEnlace() {
+      const url = window.location.href;
+      navigator.clipboard.writeText(url).then(() => {
+        const status = document.getElementById("share-status");
+        status.textContent = "✅ Enlace copiado correctamente";
+        setTimeout(() => status.textContent = "", 4000);
+      }).catch(() => {
+        document.getElementById("share-status").textContent = "❌ Error al copiar enlace";
+      });
+    }
+
+    function toggleTheme() {
+      document.documentElement.classList.toggle("dark");
+      const icon = document.getElementById("theme-icon");
+      icon.classList.toggle("fa-moon");
+      icon.classList.toggle("fa-sun");
+    }
+
+    // Inicializar al cargar
+    window.onload = () => {
+      listarMicrofonos();
+      setMode(true);
+    };
+  </script>
+</body>
+</html>
