@@ -25,7 +25,6 @@
 </head>
 <body class="bg-zinc-950 text-zinc-200 min-h-screen flex items-center justify-center p-4 md:p-6 dark">
   <div class="max-w-lg w-full space-y-8">
-    <!-- Header -->
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="w-12 h-12 bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 rounded-3xl flex items-center justify-center shadow-xl">
@@ -41,127 +40,103 @@
       </button>
     </div>
 
-    <!-- Main Card -->
     <div class="glass border border-zinc-700/50 rounded-3xl p-8 shadow-2xl">
-      
-      <!-- Mode Selector -->
       <div class="flex bg-zinc-900/80 rounded-2xl p-1 mb-8">
-        <button onclick="setMode(true)" id="btn-transmisor" 
-          class="flex-1 py-4 text-sm font-semibold rounded-xl transition-all">🎤 Transmisor (TX)</button>
-        <button onclick="setMode(false)" id="btn-receptor" 
-          class="flex-1 py-4 text-sm font-semibold rounded-xl transition-all">🎧 Receptor (RX)</button>
+        <button onclick="setMode(true)" id="btn-transmisor" class="flex-1 py-4 text-sm font-semibold rounded-xl transition-all">🎤 Transmisor (TX)</button>
+        <button onclick="setMode(false)" id="btn-receptor" class="flex-1 py-4 text-sm font-semibold rounded-xl transition-all">🎧 Receptor (RX)</button>
       </div>
 
-      <!-- Mic Selector (solo TX) -->
-      <div id="mic-section" class="mb-6">
-        <label class="block text-zinc-400 text-sm mb-2 font-medium">Micrófono</label>
-        <select id="micSelect" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-5 py-4 focus:border-violet-500 focus:outline-none text-white">
-        </select>
-      </div>
-
-      <!-- Quality -->
-      <div class="mb-6">
-        <label class="block text-zinc-400 text-sm mb-2 font-medium">Calidad de audio</label>
-        <select id="qualitySelect" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-5 py-4 focus:border-violet-500 focus:outline-none">
-          <option value="high">Alta (48kHz Estéreo)</option>
-          <option value="medium" selected>Media (44.1kHz Estéreo)</option>
-          <option value="low">Baja (32kHz Mono)</option>
-        </select>
-      </div>
-
-      <!-- Gain Control (solo TX) -->
-      <div id="gain-container" class="hidden mb-6">
-        <div class="flex justify-between text-xs text-zinc-400 mb-1.5">
-          <span>Nivel de entrada (Gain)</span>
-          <span id="gain-value">1.0x</span>
+      <!-- Controles TX -->
+      <div id="tx-controls" class="space-y-6">
+        <div>
+          <label class="block text-zinc-400 text-sm mb-2 font-medium">Micrófono</label>
+          <select id="micSelect" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-5 py-4 focus:border-violet-500 focus:outline-none text-white"></select>
         </div>
-        <input type="range" id="gain-slider" min="0" max="3" step="0.05" value="1" class="w-full">
+        <div>
+          <div class="flex justify-between text-xs text-zinc-400 mb-1.5">
+            <span>Ganancia TX (entrada mic)</span>
+            <span id="gain-tx-value">1.0x</span>
+          </div>
+          <input type="range" id="gain-tx-slider" min="0" max="3" step="0.05" value="1" class="w-full">
+        </div>
+      </div>
+
+      <!-- Ganancia RX -->
+      <div id="gain-rx-container" class="hidden">
+        <div class="flex justify-between text-xs text-zinc-400 mb-1.5">
+          <span>Ganancia RX (volumen recibido)</span>
+          <span id="gain-rx-value">1.0x</span>
+        </div>
+        <input type="range" id="gain-rx-slider" min="0" max="5" step="0.1" value="1" class="w-full">
       </div>
 
       <!-- VU Meters -->
-      <div class="space-y-6">
-        <!-- TX Meter -->
+      <div class="space-y-6 mt-8">
         <div id="tx-meter" class="hidden">
-          <div class="flex justify-between text-xs text-emerald-400 mb-1.5">
-            <span>TX - Volumen de tu micrófono</span>
-            <span id="tx-volume">0%</span>
-          </div>
-          <div class="h-2.5 bg-zinc-800 rounded-full overflow-hidden">
-            <div id="tx-bar" class="h-full w-0 bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-full"></div>
-          </div>
+          <div class="flex justify-between text-xs text-emerald-400 mb-1.5"><span>TX - Micrófono</span><span id="tx-volume">0%</span></div>
+          <div class="h-2.5 bg-zinc-800 rounded-full overflow-hidden"><div id="tx-bar" class="h-full w-0 bg-gradient-to-r from-emerald-400 to-cyan-400"></div></div>
         </div>
-
-        <!-- RX Meter -->
         <div id="rx-meter" class="hidden">
-          <div class="flex justify-between text-xs text-violet-400 mb-1.5">
-            <span>RX - Volumen recibido</span>
-            <span id="rx-volume">0%</span>
-          </div>
-          <div class="h-2.5 bg-zinc-800 rounded-full overflow-hidden">
-            <div id="rx-bar" class="h-full w-0 bg-gradient-to-r from-violet-400 to-fuchsia-400 rounded-full"></div>
-          </div>
+          <div class="flex justify-between text-xs text-violet-400 mb-1.5"><span>RX - Audio recibido</span><span id="rx-volume">0%</span></div>
+          <div class="h-2.5 bg-zinc-800 rounded-full overflow-hidden"><div id="rx-bar" class="h-full w-0 bg-gradient-to-r from-violet-400 to-fuchsia-400"></div></div>
         </div>
       </div>
 
-      <!-- Controls -->
       <div class="flex gap-3 mt-8">
-        <button onclick="iniciar()" id="start-btn"
-          class="flex-1 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 py-4 rounded-2xl font-semibold text-lg flex items-center justify-center gap-3 transition-all">
+        <button onclick="iniciar()" class="flex-1 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 py-4 rounded-2xl font-semibold text-lg flex items-center justify-center gap-3">
           <i class="fa-solid fa-broadcast-tower"></i>
-          <span id="btn-text">Iniciar Transmisión</span>
+          <span id="btn-text">Iniciar</span>
         </button>
-
-        <button onclick="toggleMute()" id="mute-btn" 
-          class="hidden w-14 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-2xl transition-all items-center justify-center">
+        <button onclick="toggleMute()" id="mute-btn" class="hidden w-14 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-2xl transition-all items-center justify-center">
           <i id="mute-icon" class="fa-solid fa-microphone text-2xl"></i>
         </button>
-
-        <button onclick="detener()" 
-          class="w-14 bg-zinc-800 hover:bg-red-900 border border-zinc-700 hover:border-red-500 rounded-2xl transition-all flex items-center justify-center">
+        <button onclick="detener()" class="w-14 bg-zinc-800 hover:bg-red-900 border border-zinc-700 hover:border-red-500 rounded-2xl transition-all flex items-center justify-center">
           <i class="fa-solid fa-circle-stop text-2xl"></i>
         </button>
       </div>
 
-      <!-- Share Link (solo TX) -->
       <div id="share-container" class="hidden mt-6">
-        <button onclick="copiarEnlace()" 
-          class="w-full flex items-center justify-center gap-3 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 py-3 rounded-2xl text-sm font-medium transition-all">
-          <i class="fa-solid fa-share-nodes"></i>
-          Copiar enlace para oyentes
+        <button onclick="copiarEnlace()" class="w-full flex items-center justify-center gap-3 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 py-3 rounded-2xl text-sm font-medium">
+          <i class="fa-solid fa-share-nodes"></i> Copiar enlace para oyentes
         </button>
         <p id="share-status" class="text-center text-xs text-emerald-400 mt-2"></p>
       </div>
 
-      <!-- Status -->
       <div id="status" class="mt-8 min-h-[72px] text-center text-sm font-medium px-6 py-5 rounded-2xl border border-transparent transition-all"></div>
 
-      <!-- Live Indicator -->
       <div id="live-indicator" class="hidden flex items-center justify-center gap-3 text-emerald-400 text-sm font-medium mt-4">
         <div class="w-3.5 h-3.5 bg-emerald-500 rounded-full mic-pulse"></div>
         <span>EN VIVO • RevoxMira TX Audio Pro</span>
       </div>
     </div>
 
-    <div class="text-center text-zinc-500 text-xs">
-      Compatible con iPhone (Safari) • Android • WebRTC
-    </div>
+    <div class="text-center text-zinc-500 text-xs">Compatible con iPhone • Android</div>
   </div>
 
   <script>
-    let peer, processedStream, remoteAudio, rxAudioContext, rxAnalyser, rxAnimationFrame;
+    let peer, processedStream, remoteAudio, rxGainNode;
     let isBroadcasterMode = true;
     let isMuted = false;
-    let currentGain = 1.0;
-    let txAudioContext, gainNode, txAnalyser, txAnimationFrame;
+    let currentTxGain = 1.0;
+    let currentRxGain = 1.0;
+
+    let txAudioContext, txGainNode, txAnalyser, txAnimationFrame;
+    let rxAudioContext, rxAnalyser, rxAnimationFrame;
+
+    function log(msg) {
+      console.log("[RevoxMira]", msg);
+      const status = document.getElementById("status");
+      if (status) status.textContent = msg;
+    }
 
     function setMode(isBroadcaster) {
       isBroadcasterMode = isBroadcaster;
       document.getElementById("btn-transmisor").classList.toggle("bg-zinc-800", !isBroadcaster);
       document.getElementById("btn-receptor").classList.toggle("bg-zinc-800", isBroadcaster);
       document.getElementById("btn-text").textContent = isBroadcaster ? "Iniciar Transmisión" : "Conectar como Receptor";
-      
-      document.getElementById("mic-section").classList.toggle("hidden", !isBroadcaster);
-      document.getElementById("gain-container").classList.toggle("hidden", !isBroadcaster);
+
+      document.getElementById("tx-controls").classList.toggle("hidden", !isBroadcaster);
+      document.getElementById("gain-rx-container").classList.toggle("hidden", isBroadcaster);
       document.getElementById("mute-btn").classList.toggle("hidden", !isBroadcaster);
       document.getElementById("share-container").classList.toggle("hidden", !isBroadcaster);
     }
@@ -171,15 +146,15 @@
         const devices = await navigator.mediaDevices.enumerateDevices();
         const select = document.getElementById("micSelect");
         select.innerHTML = '<option value="">Micrófono predeterminado</option>';
-        devices.forEach(device => {
-          if (device.kind === "audioinput") {
+        devices.forEach(d => {
+          if (d.kind === "audioinput") {
             const opt = document.createElement("option");
-            opt.value = device.deviceId;
-            opt.text = device.label || `Micrófono ${select.length}`;
+            opt.value = d.deviceId;
+            opt.text = d.label || `Micrófono ${select.length}`;
             select.appendChild(opt);
           }
         });
-      } catch (e) {}
+      } catch (e) { console.warn("No se pudo listar micrófonos"); }
     }
 
     function getAudioConstraints() {
@@ -193,69 +168,73 @@
       };
     }
 
-    function startTXMeter(rawStream) {
+    function startTXProcessing(rawStream) {
       txAudioContext = new (window.AudioContext || window.webkitAudioContext)();
       const source = txAudioContext.createMediaStreamSource(rawStream);
-      gainNode = txAudioContext.createGain();
-      gainNode.gain.value = currentGain;
+      txGainNode = txAudioContext.createGain();
+      txGainNode.gain.value = currentTxGain;
       txAnalyser = txAudioContext.createAnalyser();
       txAnalyser.fftSize = 128;
 
-      source.connect(gainNode);
-      gainNode.connect(txAnalyser);
+      source.connect(txGainNode);
+      txGainNode.connect(txAnalyser);
 
-      const destination = txAudioContext.createMediaStreamDestination();
-      gainNode.connect(destination);
-      processedStream = destination.stream;
+      const dest = txAudioContext.createMediaStreamDestination();
+      txGainNode.connect(dest);
+      processedStream = dest.stream;
 
-      const dataArray = new Uint8Array(txAnalyser.frequencyBinCount);
+      const data = new Uint8Array(txAnalyser.frequencyBinCount);
       function update() {
-        txAnalyser.getByteFrequencyData(dataArray);
-        let sum = 0;
-        for (let val of dataArray) sum += val;
-        const percent = Math.min(100, Math.floor((sum / dataArray.length) * 1.8));
-        document.getElementById("tx-bar").style.width = percent + "%";
-        document.getElementById("tx-volume").textContent = percent + "%";
+        txAnalyser.getByteFrequencyData(data);
+        let sum = 0; for (let v of data) sum += v;
+        const p = Math.min(100, Math.floor((sum / data.length) * 1.8));
+        document.getElementById("tx-bar").style.width = p + "%";
+        document.getElementById("tx-volume").textContent = p + "%";
         txAnimationFrame = requestAnimationFrame(update);
       }
       update();
     }
 
-    function startRXMeter(remoteStream) {
+    function startRXProcessing(remoteStream) {
       rxAudioContext = new (window.AudioContext || window.webkitAudioContext)();
       const source = rxAudioContext.createMediaStreamSource(remoteStream);
+      rxGainNode = rxAudioContext.createGain();
+      rxGainNode.gain.value = currentRxGain;
       rxAnalyser = rxAudioContext.createAnalyser();
       rxAnalyser.fftSize = 128;
 
-      source.connect(rxAnalyser);
+      source.connect(rxGainNode);
+      rxGainNode.connect(rxAnalyser);
 
-      const dataArray = new Uint8Array(rxAnalyser.frequencyBinCount);
+      const data = new Uint8Array(rxAnalyser.frequencyBinCount);
       function update() {
-        rxAnalyser.getByteFrequencyData(dataArray);
-        let sum = 0;
-        for (let val of dataArray) sum += val;
-        const percent = Math.min(100, Math.floor((sum / dataArray.length) * 1.8));
-        document.getElementById("rx-bar").style.width = percent + "%";
-        document.getElementById("rx-volume").textContent = percent + "%";
+        rxAnalyser.getByteFrequencyData(data);
+        let sum = 0; for (let v of data) sum += v;
+        const p = Math.min(100, Math.floor((sum / data.length) * 1.8));
+        document.getElementById("rx-bar").style.width = p + "%";
+        document.getElementById("rx-volume").textContent = p + "%";
         rxAnimationFrame = requestAnimationFrame(update);
       }
       update();
     }
 
-    // Gain slider
+    // Sliders de gain
     document.addEventListener('input', e => {
-      if (e.target.id === 'gain-slider') {
-        currentGain = parseFloat(e.target.value);
-        document.getElementById("gain-value").textContent = currentGain.toFixed(1) + "x";
-        if (gainNode) gainNode.gain.value = currentGain;
+      if (e.target.id === 'gain-tx-slider') {
+        currentTxGain = parseFloat(e.target.value);
+        document.getElementById("gain-tx-value").textContent = currentTxGain.toFixed(1) + "x";
+        if (txGainNode) txGainNode.gain.value = currentTxGain;
+      }
+      if (e.target.id === 'gain-rx-slider') {
+        currentRxGain = parseFloat(e.target.value);
+        document.getElementById("gain-rx-value").textContent = currentRxGain.toFixed(1) + "x";
+        if (rxGainNode) rxGainNode.gain.value = currentRxGain;
       }
     });
 
     function toggleMute() {
       isMuted = !isMuted;
-      if (processedStream) {
-        processedStream.getAudioTracks().forEach(track => track.enabled = !isMuted);
-      }
+      if (processedStream) processedStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
       const icon = document.getElementById("mute-icon");
       icon.classList.toggle("fa-microphone", !isMuted);
       icon.classList.toggle("fa-microphone-slash", isMuted);
@@ -263,74 +242,76 @@
 
     async function iniciar() {
       const statusEl = document.getElementById("status");
-      const liveIndicator = document.getElementById("live-indicator");
+      log("Iniciando...");
 
       try {
-        statusEl.textContent = "Accediendo al micrófono...";
-
         if (isBroadcasterMode) {
+          log("Accediendo al micrófono...");
           const micId = document.getElementById("micSelect").value;
           const rawStream = await navigator.mediaDevices.getUserMedia({
             audio: { deviceId: micId ? { exact: micId } : undefined, ...getAudioConstraints() }
           });
-          startTXMeter(rawStream);
+          startTXProcessing(rawStream);
           document.getElementById("tx-meter").classList.remove("hidden");
         }
 
         peer = new Peer(isBroadcasterMode ? "emisora" : "receptor");
 
-        peer.on("open", () => {
-          statusEl.innerHTML = `Conectado como <span class="text-violet-400">${isBroadcasterMode ? 'TRANSMISOR (TX)' : 'RECEPTOR (RX)'}</span>`;
+        peer.on("open", id => {
+          log(`Conectado (ID: ${id})`);
         });
 
         if (isBroadcasterMode) {
           peer.on("open", () => {
-            peer.call("receptor", processedStream);
-            liveIndicator.classList.remove("hidden");
-            statusEl.textContent = "📡 Transmitiendo en alta calidad...";
+            const call = peer.call("receptor", processedStream);
+            log("Enviando audio al receptor...");
           });
         } else {
+          // Receptor
           peer.on("call", (call) => {
-            call.answer(); // Receptor no envía stream de vuelta
+            log("Llamada recibida del transmisor");
+            call.answer();   // No enviamos stream
+
             call.on("stream", (remoteStream) => {
+              log("Stream recibido → reproduciendo audio");
               if (!remoteAudio) {
                 remoteAudio = new Audio();
                 remoteAudio.autoplay = true;
                 remoteAudio.playsInline = true;
               }
               remoteAudio.srcObject = remoteStream;
-              remoteAudio.play().catch(() => {});
 
-              startRXMeter(remoteStream);
+              // Forzar reproducción
+              remoteAudio.play().then(() => {
+                log("Audio reproduciéndose correctamente");
+              }).catch(err => {
+                console.error("Error al reproducir:", err);
+                log("Error al reproducir audio (toca la pantalla si estás en móvil)");
+              });
+
+              startRXProcessing(remoteStream);
               document.getElementById("rx-meter").classList.remove("hidden");
-
-              liveIndicator.classList.remove("hidden");
-              statusEl.textContent = "🎧 Reproduciendo audio recibido";
+              document.getElementById("live-indicator").classList.remove("hidden");
             });
           });
         }
       } catch (err) {
-        statusEl.textContent = err.name === "NotAllowedError" 
-          ? "❌ Permiso de micrófono denegado" 
-          : "❌ Error: " + err.message;
+        console.error(err);
+        log("Error: " + (err.name === "NotAllowedError" ? "Permiso de micrófono denegado" : err.message));
       }
     }
 
     function detener() {
       if (processedStream) processedStream.getTracks().forEach(t => t.stop());
-      if (remoteAudio) remoteAudio.pause();
+      if (remoteAudio) { remoteAudio.pause(); remoteAudio.srcObject = null; }
       if (txAudioContext) txAudioContext.close();
       if (rxAudioContext) rxAudioContext.close();
       if (peer) peer.destroy();
-      if (txAnimationFrame) cancelAnimationFrame(txAnimationFrame);
-      if (rxAnimationFrame) cancelAnimationFrame(rxAnimationFrame);
 
       document.getElementById("tx-meter").classList.add("hidden");
       document.getElementById("rx-meter").classList.add("hidden");
-      document.getElementById("tx-bar").style.width = "0%";
-      document.getElementById("rx-bar").style.width = "0%";
       document.getElementById("live-indicator").classList.add("hidden");
-      document.getElementById("status").textContent = "Transmisión detenida";
+      log("Transmisión detenida");
     }
 
     function copiarEnlace() {
