@@ -3,182 +3,226 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>RevoxMira TX Audio Pro</title>
+  <title>RevoxMira TX Audio Pro - Manual SDP</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.5/peerjs.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     body { font-family: 'Inter', system-ui, sans-serif; }
     .glass { background: rgba(255,255,255,0.08); backdrop-filter: blur(20px); }
-    .mic-pulse { animation: micPulse 1.8s infinite ease-in-out; }
-    @keyframes micPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+    .mic-pulse { animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+    textarea { font-family: monospace; font-size: 13px; }
   </style>
 </head>
 <body class="bg-zinc-950 text-zinc-200 min-h-screen flex items-center justify-center p-4 dark">
-  <div class="max-w-lg w-full space-y-8">
+  <div class="max-w-2xl w-full space-y-8">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="w-12 h-12 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-3xl flex items-center justify-center">
-          <i class="fa-solid fa-microphone text-white text-3xl"></i>
+          <i class="fa-solid fa-microphone text-3xl"></i>
         </div>
         <div>
           <h1 class="text-4xl font-bold tracking-tighter">RevoxMira</h1>
-          <p class="text-violet-400 text-sm font-semibold">TX Audio Pro</p>
+          <p class="text-violet-400 text-sm font-semibold">TX Audio Pro - Manual SDP</p>
         </div>
       </div>
-      <button onclick="toggleTheme()" class="p-3 rounded-2xl hover:bg-zinc-900 text-xl"><i id="theme-icon" class="fa-solid fa-moon"></i></button>
+      <button onclick="toggleTheme()" class="p-3 rounded-2xl hover:bg-zinc-900"><i id="theme-icon" class="fa-solid fa-moon text-xl"></i></button>
     </div>
 
-    <div class="glass border border-zinc-700/50 rounded-3xl p-8 shadow-2xl">
-      <div class="flex bg-zinc-900/80 rounded-2xl p-1 mb-8">
-        <button onclick="setMode(true)" id="btn-tx" class="flex-1 py-4 text-sm font-semibold rounded-xl">🎤 Transmisor (TX)</button>
-        <button onclick="setMode(false)" id="btn-rx" class="flex-1 py-4 text-sm font-semibold rounded-xl">🎧 Receptor (RX)</button>
+    <div class="glass border border-zinc-700 rounded-3xl p-8">
+      <div class="flex bg-zinc-900 rounded-2xl p-1 mb-8">
+        <button onclick="setMode(true)" id="btn-tx" class="flex-1 py-4 rounded-xl font-semibold">🎤 Soy el Transmisor</button>
+        <button onclick="setMode(false)" id="btn-rx" class="flex-1 py-4 rounded-xl font-semibold">🎧 Soy el Receptor</button>
       </div>
 
-      <!-- TX Controls -->
-      <div id="tx-panel" class="space-y-6">
-        <div>
-          <label class="block text-zinc-400 text-sm mb-2">Micrófono</label>
-          <select id="micSelect" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-5 py-4 text-white"></select>
+      <!-- Transmisor -->
+      <div id="tx-panel">
+        <label class="block text-zinc-400 text-sm mb-2">Micrófono</label>
+        <select id="micSelect" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-5 py-4 mb-6"></select>
+
+        <button onclick="createOffer()" class="w-full bg-violet-600 hover:bg-violet-500 py-4 rounded-2xl font-semibold mb-4">
+          1. Crear Offer (SDP)
+        </button>
+
+        <div class="mb-6">
+          <p class="text-xs text-zinc-400 mb-2">Copia este Offer y pégalo en el Receptor:</p>
+          <textarea id="offer-sdp" rows="6" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl p-4 text-white resize-y" readonly></textarea>
         </div>
-        <div>
-          <div class="flex justify-between text-xs text-zinc-400 mb-1"><span>Ganancia TX</span><span id="tx-gain-val">1.0x</span></div>
-          <input type="range" id="tx-gain" min="0" max="3" step="0.05" value="1" class="w-full">
-        </div>
+
+        <button onclick="setAnswer()" class="w-full bg-emerald-600 hover:bg-emerald-500 py-4 rounded-2xl font-semibold">
+          3. Pegar Answer del Receptor
+        </button>
+        <textarea id="answer-input" rows="4" class="w-full mt-3 bg-zinc-900 border border-zinc-700 rounded-2xl p-4 text-white" placeholder="Pega aquí el Answer SDP del receptor"></textarea>
       </div>
 
-      <!-- RX Gain -->
+      <!-- Receptor -->
       <div id="rx-panel" class="hidden">
-        <div class="flex justify-between text-xs text-zinc-400 mb-1"><span>Ganancia RX (volumen recibido)</span><span id="rx-gain-val">1.0x</span></div>
-        <input type="range" id="rx-gain" min="0" max="5" step="0.1" value="1" class="w-full">
+        <button onclick="createAnswer()" class="w-full bg-emerald-600 hover:bg-emerald-500 py-4 rounded-2xl font-semibold mb-4">
+          2. Pegar Offer del Transmisor y Crear Answer
+        </button>
+        <textarea id="offer-input" rows="6" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl p-4 text-white" placeholder="Pega aquí el Offer SDP del transmisor"></textarea>
+
+        <div class="mt-6">
+          <p class="text-xs text-zinc-400 mb-2">Copia este Answer y pégalo en el Transmisor:</p>
+          <textarea id="answer-sdp" rows="6" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl p-4 text-white resize-y" readonly></textarea>
+        </div>
       </div>
 
-      <!-- Meters -->
-      <div class="space-y-6 mt-8">
+      <!-- VU Meters -->
+      <div class="mt-10 space-y-6">
         <div id="tx-meter" class="hidden">
-          <div class="flex justify-between text-xs text-emerald-400 mb-1"><span>TX Mic</span><span id="tx-vol">0%</span></div>
-          <div class="h-2.5 bg-zinc-800 rounded-full"><div id="tx-bar" class="h-full w-0 bg-emerald-400 rounded-full"></div></div>
+          <div class="flex justify-between text-xs text-emerald-400 mb-1"><span>TX - Micrófono</span><span id="tx-vol">0%</span></div>
+          <div class="h-2.5 bg-zinc-800 rounded-full"><div id="tx-bar" class="h-full bg-emerald-400 w-0 transition-all"></div></div>
         </div>
         <div id="rx-meter" class="hidden">
-          <div class="flex justify-between text-xs text-violet-400 mb-1"><span>RX Recibido</span><span id="rx-vol">0%</span></div>
-          <div class="h-2.5 bg-zinc-800 rounded-full"><div id="rx-bar" class="h-full w-0 bg-violet-400 rounded-full"></div></div>
+          <div class="flex justify-between text-xs text-violet-400 mb-1"><span>RX - Audio recibido</span><span id="rx-vol">0%</span></div>
+          <div class="h-2.5 bg-zinc-800 rounded-full"><div id="rx-bar" class="h-full bg-violet-400 w-0 transition-all"></div></div>
         </div>
       </div>
 
-      <div class="flex gap-3 mt-8">
-        <button onclick="iniciar()" class="flex-1 bg-gradient-to-r from-violet-600 to-fuchsia-600 py-4 rounded-2xl font-semibold flex items-center justify-center gap-3">
-          <i class="fa-solid fa-broadcast-tower"></i> <span id="start-btn-text">Iniciar</span>
-        </button>
-        <button onclick="toggleMute()" id="mute-btn" class="hidden w-14 bg-zinc-800 border border-zinc-700 rounded-2xl items-center justify-center"><i id="mute-icon" class="fa-solid fa-microphone text-2xl"></i></button>
-        <button onclick="detener()" class="w-14 bg-zinc-800 border border-zinc-700 hover:border-red-500 rounded-2xl flex items-center justify-center"><i class="fa-solid fa-circle-stop text-2xl"></i></button>
-      </div>
-
-      <div id="share-container" class="hidden mt-6">
-        <button onclick="copiarEnlace()" class="w-full py-3 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 rounded-2xl flex items-center justify-center gap-3">
-          <i class="fa-solid fa-share-nodes"></i> Copiar enlace para oyentes
+      <div class="flex gap-4 mt-8">
+        <button onclick="stopAll()" class="flex-1 bg-red-600 hover:bg-red-700 py-4 rounded-2xl font-semibold">
+          Detener todo
         </button>
       </div>
 
-      <div id="status" class="mt-8 min-h-[70px] text-center text-sm font-medium px-6 py-5 rounded-2xl bg-zinc-900 border border-zinc-700"></div>
-      <div id="live" class="hidden mt-4 flex items-center justify-center gap-3 text-emerald-400 text-sm"><div class="w-3.5 h-3.5 bg-emerald-500 rounded-full mic-pulse"></div> TRANSMITIENDO EN VIVO</div>
+      <div id="status" class="mt-8 text-center text-sm min-h-[60px] p-5 rounded-2xl bg-zinc-900 border border-zinc-700"></div>
+      <div id="live" class="hidden mt-4 flex items-center justify-center gap-3 text-emerald-400">
+        <div class="w-4 h-4 bg-emerald-500 rounded-full mic-pulse"></div>
+        <span class="font-medium">TRANSMITIENDO EN VIVO</span>
+      </div>
     </div>
   </div>
 
   <script>
-    let peer, localProcessedStream, remoteAudio;
-    let isTX = true;
-    let txGainNode, rxGainNode, txAnalyser, rxAnalyser;
-    let txCtx, rxCtx;
+    let pc = null;
+    let localStream = null;
+    let remoteAudio = null;
+    let isTransmitter = true;
+    let rxGainNode = null;
+    let rxAnalyser = null;
 
     function setMode(tx) {
-      isTX = tx;
-      document.getElementById("btn-tx").classList.toggle("bg-zinc-800", !tx);
-      document.getElementById("btn-rx").classList.toggle("bg-zinc-800", tx);
+      isTransmitter = tx;
       document.getElementById("tx-panel").classList.toggle("hidden", !tx);
       document.getElementById("rx-panel").classList.toggle("hidden", tx);
-      document.getElementById("mute-btn").classList.toggle("hidden", !tx);
-      document.getElementById("share-container").classList.toggle("hidden", !tx);
-      document.getElementById("start-btn-text").textContent = tx ? "Iniciar Transmisión" : "Conectar Receptor";
+      document.getElementById("btn-tx").classList.toggle("bg-zinc-800", !tx);
+      document.getElementById("btn-rx").classList.toggle("bg-zinc-800", tx);
     }
 
-    async function iniciar() {
+    async function listarMicrofonos() {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const select = document.getElementById("micSelect");
+      select.innerHTML = '<option value="">Micrófono predeterminado</option>';
+      devices.forEach(d => {
+        if (d.kind === "audioinput") {
+          const opt = document.createElement("option");
+          opt.value = d.deviceId;
+          opt.text = d.label || `Micrófono ${select.length}`;
+          select.appendChild(opt);
+        }
+      });
+    }
+
+    async function createOffer() {
       const status = document.getElementById("status");
-      status.textContent = isTX ? "Accediendo micrófono..." : "Esperando transmisión...";
+      status.textContent = "Creando conexión...";
 
-      try {
-        if (isTX) {
-          const micId = document.getElementById("micSelect").value;
-          const stream = await navigator.mediaDevices.getUserMedia({
-            audio: { deviceId: micId ? { exact: micId } : undefined, sampleRate: 48000, channelCount: 2, echoCancellation: false, noiseSuppression: false }
-          });
+      pc = new RTCPeerConnection({
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:openrelay.metered.ca:80" }
+        ]
+      });
 
-          // Procesar con Gain y VU meter TX
-          txCtx = new (window.AudioContext || window.webkitAudioContext)();
-          const source = txCtx.createMediaStreamSource(stream);
-          txGainNode = txCtx.createGain();
-          txGainNode.gain.value = 1;
-          txAnalyser = txCtx.createAnalyser();
-          txAnalyser.fftSize = 128;
-          source.connect(txGainNode);
-          txGainNode.connect(txAnalyser);
-          const dest = txCtx.createMediaStreamDestination();
-          txGainNode.connect(dest);
-          localProcessedStream = dest.stream;
+      const micId = document.getElementById("micSelect").value;
+      localStream = await navigator.mediaDevices.getUserMedia({
+        audio: { deviceId: micId ? { exact: micId } : undefined, echoCancellation: false, noiseSuppression: false }
+      });
 
-          // Iniciar VU TX
-          startVUMeter(txAnalyser, "tx-bar", "tx-vol");
-        }
+      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
 
-        peer = new Peer(isTX ? "emisora" : "receptor");
+      // VU Meter TX
+      document.getElementById("tx-meter").classList.remove("hidden");
+      startVUMeter(localStream, "tx-bar", "tx-vol");
 
-        peer.on("open", () => {
-          status.textContent = `Conectado como ${isTX ? 'TRANSMISOR' : 'RECEPTOR'}`;
-          if (isTX) {
-            const call = peer.call("receptor", localProcessedStream);
-            console.log("Llamada enviada desde TX");
-          }
-        });
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
 
-        // Receptor
-        if (!isTX) {
-          peer.on("call", (call) => {
-            console.log("Llamada recibida en RX");
-            call.answer(); // Sin stream de vuelta
-            call.on("stream", (remoteStream) => {
-              console.log("Stream recibido en RX → reproduciendo");
-              status.textContent = "Audio recibido correctamente";
-              document.getElementById("live").classList.remove("hidden");
-
-              if (!remoteAudio) {
-                remoteAudio = new Audio();
-                remoteAudio.autoplay = true;
-                remoteAudio.playsInline = true;
-              }
-              remoteAudio.srcObject = remoteStream;
-              remoteAudio.play().catch(e => console.error("Play error:", e));
-
-              // Ganancia y VU RX
-              rxCtx = new (window.AudioContext || window.webkitAudioContext)();
-              const source = rxCtx.createMediaStreamSource(remoteStream);
-              rxGainNode = rxCtx.createGain();
-              rxGainNode.gain.value = 1;
-              rxAnalyser = rxCtx.createAnalyser();
-              rxAnalyser.fftSize = 128;
-              source.connect(rxGainNode);
-              rxGainNode.connect(rxAnalyser);
-              startVUMeter(rxAnalyser, "rx-bar", "rx-vol");
-              document.getElementById("rx-meter").classList.remove("hidden");
-            });
-          });
-        }
-      } catch (e) {
-        console.error(e);
-        status.textContent = "Error: " + e.message;
-      }
+      document.getElementById("offer-sdp").value = pc.localDescription.sdp;
+      status.textContent = "Offer creado. Copia el SDP de arriba y pégalo en el Receptor.";
     }
 
-    function startVUMeter(analyser, barId, volId) {
+    async function createAnswer() {
+      const offerSDP = document.getElementById("offer-input").value.trim();
+      if (!offerSDP) {
+        alert("Primero pega el Offer del Transmisor");
+        return;
+      }
+
+      pc = new RTCPeerConnection({
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:openrelay.metered.ca:80" }
+        ]
+      });
+
+      pc.ontrack = (event) => {
+        remoteAudio = new Audio();
+        remoteAudio.srcObject = event.streams[0];
+        remoteAudio.autoplay = true;
+        remoteAudio.playsInline = true;
+        remoteAudio.play();
+
+        document.getElementById("live").classList.remove("hidden");
+        document.getElementById("rx-meter").classList.remove("hidden");
+        setupRXAudio(event.streams[0]);
+        document.getElementById("status").textContent = "✅ Audio recibido correctamente";
+      };
+
+      await pc.setRemoteDescription({ type: "offer", sdp: offerSDP });
+
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+
+      document.getElementById("answer-sdp").value = pc.localDescription.sdp;
+      document.getElementById("status").textContent = "Answer creado. Copia el SDP de arriba y pégalo en el Transmisor.";
+    }
+
+    async function setAnswer() {
+      const answerSDP = document.getElementById("answer-input").value.trim();
+      if (!answerSDP || !pc) {
+        alert("Primero crea el Offer y pega el Answer aquí");
+        return;
+      }
+
+      await pc.setRemoteDescription({ type: "answer", sdp: answerSDP });
+      document.getElementById("status").textContent = "Conexión establecida. Deberías oír audio en el Receptor.";
+      document.getElementById("live").classList.remove("hidden");
+    }
+
+    function setupRXAudio(stream) {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const source = ctx.createMediaStreamSource(stream);
+      rxGainNode = ctx.createGain();
+      rxGainNode.gain.value = 1;
+      rxAnalyser = ctx.createAnalyser();
+      rxAnalyser.fftSize = 128;
+      source.connect(rxGainNode);
+      rxGainNode.connect(rxAnalyser);
+
+      startVUMeter(rxAnalyser, "rx-bar", "rx-vol", true);
+    }
+
+    function startVUMeter(input, barId, volId, isAnalyser = false) {
+      let analyser = input;
+      if (!isAnalyser) {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = ctx.createAnalyser();
+        analyser.fftSize = 128;
+        ctx.createMediaStreamSource(input).connect(analyser);
+      }
       const data = new Uint8Array(analyser.frequencyBinCount);
       function loop() {
         analyser.getByteFrequencyData(data);
@@ -192,19 +236,17 @@
       loop();
     }
 
-    function toggleMute() {
-      // ... (mantengo el mute existente)
-    }
-
-    function detener() {
-      if (localProcessedStream) localProcessedStream.getTracks().forEach(t => t.stop());
+    function stopAll() {
+      if (localStream) localStream.getTracks().forEach(t => t.stop());
+      if (pc) pc.close();
       if (remoteAudio) remoteAudio.pause();
-      if (peer) peer.destroy();
       document.getElementById("live").classList.add("hidden");
-      document.getElementById("status").textContent = "Detenido";
+      document.getElementById("tx-meter").classList.add("hidden");
+      document.getElementById("rx-meter").classList.add("hidden");
+      document.getElementById("status").textContent = "Todo detenido";
     }
 
-    function copiarEnlace() {
+    function copyLink() {
       navigator.clipboard.writeText(window.location.href);
       alert("Enlace copiado. Ábrelo en otra pestaña o dispositivo como Receptor.");
     }
@@ -215,7 +257,7 @@
 
     window.onload = () => {
       setMode(true);
-      // Listar micrófonos (opcional)
+      listarMicrofonos();
     };
   </script>
 </body>
