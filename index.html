@@ -1,13 +1,219 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>revox TX - High Fidelity Audio Engine</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>revox TX - High Fidelity Audio Engine</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .glass { background: rgba(255,255,255,0.08); backdrop-filter: blur(20px); }
+    .mic-pulse { animation: pulse 1.8s infinite ease-in-out; }
+    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-200 min-h-screen flex items-center justify-center p-4">
+  <div class="max-w-md w-full space-y-8">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-3xl flex items-center justify-center shadow-2xl">
+        <i class="fa-solid fa-microphone text-3xl"></i>
+      </div>
+      <div>
+        <h1 class="text-4xl font-bold tracking-tighter">revox TX</h1>
+        <p class="text-violet-400 font-semibold">High Fidelity Audio Engine</p>
+      </div>
+    </div>
 
+    <div class="glass border border-zinc-700 rounded-3xl p-8">
+      <h2 class="text-2xl font-semibold mb-6 text-center">Transmisión de Audio Profesional</h2>
+
+      <!-- Mic Selector -->
+      <div class="mb-6">
+        <label class="block text-zinc-400 text-sm mb-2">Fuente de micrófono</label>
+        <select id="micSelect" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-5 py-4 text-white focus:border-violet-500 outline-none">
+        </select>
+      </div>
+
+      <!-- Gain Control -->
+      <div class="mb-8">
+        <label class="block text-zinc-400 text-sm mb-2">Ganancia del micrófono</label>
+        <div class="flex items-center gap-4">
+          <input type="range" id="gain-slider" min="0" max="3" step="0.05" value="1" class="flex-1 accent-violet-500">
+          <span id="gain-value" class="font-mono w-12 text-right">1.0x</span>
+        </div>
+      </div>
+
+      <!-- VU Meter -->
+      <div id="vu-container" class="hidden mb-8">
+        <div class="flex justify-between text-xs text-emerald-400 mb-1.5">
+          <span>VU Meter - Nivel actual</span>
+          <span id="vu-level">0%</span>
+        </div>
+        <div class="h-3 bg-zinc-800 rounded-full overflow-hidden">
+          <div id="vu-bar" class="h-full bg-gradient-to-r from-emerald-400 to-cyan-400 w-0 transition-all"></div>
+        </div>
+      </div>
+
+      <!-- Room Name -->
+      <div class="mb-6">
+        <label class="block text-zinc-400 text-sm mb-2">Nombre de la sala</label>
+        <input id="room-name" type="text" value="MiAudioHD" 
+          class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-5 py-4 text-white focus:border-violet-500 outline-none">
+      </div>
+
+      <button onclick="iniciarEmision()" 
+        class="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 py-5 rounded-2xl text-xl font-semibold shadow-lg mb-6">
+        INICIAR EMISIÓN ESTÉREO HD
+      </button>
+
+      <!-- Enlaces y Compartir -->
+      <div id="enlaces-panel" class="hidden space-y-6">
+        <div>
+          <p class="text-xs text-zinc-400 mb-2">Enlace para el Receptor</p>
+          <div id="receptor-link" class="bg-zinc-900 border border-zinc-700 rounded-2xl p-4 text-sm break-all font-mono text-violet-300"></div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <button onclick="compartirWhatsApp()" class="py-4 bg-green-600 hover:bg-green-500 rounded-2xl flex flex-col items-center gap-1 text-sm">
+            <i class="fa-brands fa-whatsapp text-2xl"></i><span>WhatsApp</span>
+          </button>
+          <button onclick="compartirTelegram()" class="py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl flex flex-col items-center gap-1 text-sm">
+            <i class="fa-brands fa-telegram text-2xl"></i><span>Telegram</span>
+          </button>
+          <button onclick="compartirEmail()" class="py-4 bg-zinc-700 hover:bg-zinc-600 rounded-2xl flex flex-col items-center gap-1 text-sm">
+            <i class="fa-solid fa-envelope text-2xl"></i><span>Email</span>
+          </button>
+        </div>
+
+        <button onclick="copiarLink()" class="w-full py-3 bg-zinc-800 hover:bg-zinc-700 rounded-2xl text-sm font-medium">
+          Copiar enlace manualmente
+        </button>
+      </div>
+
+      <div id="status" class="mt-8 text-center text-sm font-medium min-h-[60px]"></div>
+    </div>
+  </div>
+
+  <script>
+    let roomId = "";
+    let localStream = null;
+    let audioContext = null;
+    let analyser = null;
+    let gainNode = null;
+    let animationFrame = null;
+
+    async function listarMicrofonos() {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const select = document.getElementById("micSelect");
+        select.innerHTML = '<option value="">Micrófono predeterminado del sistema</option>';
+        devices.forEach(device => {
+          if (device.kind === "audioinput") {
+            const opt = document.createElement("option");
+            opt.value = device.deviceId;
+            opt.text = device.label || `Micrófono ${select.length}`;
+            select.appendChild(opt);
+          }
+        });
+      } catch (e) {}
+    }
+
+    async function iniciarEmision() {
+      const status = document.getElementById("status");
+      const roomName = document.getElementById("room-name").value.trim() || "RevoxMiraHD";
+      roomId = "revox-" + roomName.toLowerCase().replace(/[^a-z0-9]/g, '') + "-" + Math.random().toString(36).substring(2, 8);
+
+      const base = "https://vdo.ninja";
+      const gain = document.getElementById("gain-slider").value;
+
+      const viewLink = `${base}/?view=${roomId}&proaudio=1&stereo=1&audiobitrate=256&clean=1&novideo=1&autostart=1`;
+
+      document.getElementById("receptor-link").innerHTML = 
+        `<a href="${viewLink}" target="_blank" class="underline break-all">${viewLink}</a>`;
+
+      document.getElementById("enlaces-panel").classList.remove("hidden");
+
+      try {
+        const micId = document.getElementById("micSelect").value;
+        localStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            deviceId: micId ? { exact: micId } : undefined,
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+            sampleRate: 48000,
+            channelCount: 2
+          }
+        });
+
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const source = audioContext.createMediaStreamSource(localStream);
+        gainNode = audioContext.createGain();
+        gainNode.gain.value = parseFloat(gain);
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 128;
+
+        source.connect(gainNode);
+        gainNode.connect(analyser);
+
+        document.getElementById("vu-container").classList.remove("hidden");
+        startVUMeter();
+
+        status.innerHTML = `✅ Emisión iniciada en <b>Estéreo HD 48kHz</b><br>Sala: <span class="font-medium">${roomName}</span>`;
+      } catch (e) {
+        status.textContent = "Error al acceder al micrófono. Permite el acceso.";
+        console.error(e);
+      }
+    }
+
+    function startVUMeter() {
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      function update() {
+        analyser.getByteFrequencyData(dataArray);
+        let sum = 0;
+        for (let v of dataArray) sum += v;
+        const percent = Math.min(100, Math.floor((sum / dataArray.length) * 1.8));
+
+        document.getElementById("vu-bar").style.width = percent + "%";
+        document.getElementById("vu-level").textContent = percent + "%";
+        animationFrame = requestAnimationFrame(update);
+      }
+      update();
+    }
+
+    document.getElementById("gain-slider").addEventListener("input", function() {
+      document.getElementById("gain-value").textContent = this.value + "x";
+      if (gainNode) gainNode.gain.value = parseFloat(this.value);
+    });
+
+    function copiarLink() {
+      const link = document.getElementById("receptor-link").querySelector("a").href;
+      navigator.clipboard.writeText(link).then(() => alert("✅ Enlace copiado"));
+    }
+
+    function compartirWhatsApp() {
+      const link = document.getElementById("receptor-link").querySelector("a").href;
+      const text = "Escucha mi audio en vivo (Estéreo HD):";
+      window.open(`https://wa.me/?text=${encodeURIComponent(text + "\n" + link)}`, "_blank");
+    }
+
+    function compartirTelegram() {
+      const link = document.getElementById("receptor-link").querySelector("a").href;
+      window.open(`https://t.me/share/url?url=${encodeURIComponent(link)}`, "_blank");
+    }
+
+    function compartirEmail() {
+      const link = document.getElementById("receptor-link").querySelector("a").href;
+      const subject = "Enlace de audio en vivo - revox TX";
+      const body = `Hola,\n\nAquí tienes el enlace para escuchar mi audio en vivo en estéreo HD:\n\n${link}`;
+      window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    }
+
+    window.onload = () => {
+      listarMicrofonos();
+    };
+  </script>
+</body>
+</html>
