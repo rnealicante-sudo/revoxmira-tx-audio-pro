@@ -10,8 +10,6 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     body { font-family: 'Inter', system-ui, sans-serif; }
     .glass { background: rgba(255,255,255,0.08); backdrop-filter: blur(20px); }
-    .mic-pulse { animation: pulse 1.8s infinite ease-in-out; }
-    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.25); } }
   </style>
 </head>
 <body class="bg-zinc-950 text-zinc-200 min-h-screen flex items-center justify-center p-4">
@@ -22,21 +20,18 @@
       </div>
       <div>
         <h1 class="text-4xl font-bold tracking-tighter">revox TX</h1>
-        <p class="text-violet-400 font-semibold">High Fidelity Audio Engine</p>
+        <p class="text-violet-400 font-semibold">High Fidelity Audio Engine v22</p>
       </div>
     </div>
 
     <div class="glass border border-zinc-700 rounded-3xl p-8">
-      <h2 class="text-2xl font-semibold mb-6 text-center">Transmisión de Audio Profesional</h2>
+      <h2 class="text-2xl font-semibold mb-6 text-center">Emisor de Audio Profesional</h2>
 
-      <!-- Mic Selector -->
       <div class="mb-6">
-        <label class="block text-zinc-400 text-sm mb-2">Fuente de micrófono</label>
-        <select id="micSelect" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-5 py-4 text-white focus:border-violet-500 outline-none">
-        </select>
+        <label class="block text-zinc-400 text-sm mb-2">Micrófono</label>
+        <select id="micSelect" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-5 py-4 text-white focus:border-violet-500 outline-none"></select>
       </div>
 
-      <!-- Gain Control -->
       <div class="mb-8">
         <label class="block text-zinc-400 text-sm mb-2">Ganancia del micrófono</label>
         <div class="flex items-center gap-4">
@@ -45,7 +40,6 @@
         </div>
       </div>
 
-      <!-- VU Meter -->
       <div id="vu-container" class="hidden mb-8">
         <div class="flex justify-between text-xs text-emerald-400 mb-1.5">
           <span>VU Meter - Nivel actual</span>
@@ -56,19 +50,11 @@
         </div>
       </div>
 
-      <!-- Room Name -->
-      <div class="mb-6">
-        <label class="block text-zinc-400 text-sm mb-2">Nombre de la sala</label>
-        <input id="room-name" type="text" value="MiAudioHD" 
-          class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-5 py-4 text-white focus:border-violet-500 outline-none">
-      </div>
-
       <button onclick="iniciarEmision()" 
         class="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 py-5 rounded-2xl text-xl font-semibold shadow-lg mb-6">
         INICIAR EMISIÓN ESTÉREO HD
       </button>
 
-      <!-- Enlaces y Compartir -->
       <div id="enlaces-panel" class="hidden space-y-6">
         <div>
           <p class="text-xs text-zinc-400 mb-2">Enlace para el Receptor</p>
@@ -108,7 +94,7 @@
       try {
         const devices = await navigator.mediaDevices.enumerateDevices();
         const select = document.getElementById("micSelect");
-        select.innerHTML = '<option value="">Micrófono predeterminado del sistema</option>';
+        select.innerHTML = '<option value="">Micrófono predeterminado</option>';
         devices.forEach(device => {
           if (device.kind === "audioinput") {
             const opt = document.createElement("option");
@@ -122,19 +108,28 @@
 
     async function iniciarEmision() {
       const status = document.getElementById("status");
-      const roomName = document.getElementById("room-name").value.trim() || "RevoxMiraHD";
+      const roomName = document.getElementById("room-name").value.trim() || "RevoxTX";
       roomId = "revox-" + roomName.toLowerCase().replace(/[^a-z0-9]/g, '') + "-" + Math.random().toString(36).substring(2, 8);
 
       const base = "https://vdo.ninja";
       const gain = document.getElementById("gain-slider").value;
 
+      // Enlace del TRANSMISOR (se abre en nueva pestaña)
+      const pushLink = `${base}/?push=${roomId}&proaudio=1&stereo=1&audiobitrate=256&gain=${gain}&echo=0&noise=0`;
+
+      // Enlace del RECEPTOR
       const viewLink = `${base}/?view=${roomId}&proaudio=1&stereo=1&audiobitrate=256&clean=1&novideo=1&autostart=1`;
 
+      // ABRIR LA PESTAÑA DEL TRANSMISOR (esto es clave)
+      window.open(pushLink, "_blank");
+
+      // Mostrar enlace del receptor
       document.getElementById("receptor-link").innerHTML = 
         `<a href="${viewLink}" target="_blank" class="underline break-all">${viewLink}</a>`;
 
       document.getElementById("enlaces-panel").classList.remove("hidden");
 
+      // Iniciar VU Meter en esta pestaña (monitor local)
       try {
         const micId = document.getElementById("micSelect").value;
         localStream = await navigator.mediaDevices.getUserMedia({
@@ -161,7 +156,7 @@
         document.getElementById("vu-container").classList.remove("hidden");
         startVUMeter();
 
-        status.innerHTML = `✅ Emisión iniciada en <b>Estéreo HD 48kHz</b><br>Sala: <span class="font-medium">${roomName}</span>`;
+        status.innerHTML = `✅ Transmisor abierto en nueva pestaña<br>VU Meter activo • Comparte el enlace del receptor`;
       } catch (e) {
         status.textContent = "Error al acceder al micrófono. Permite el acceso.";
         console.error(e);
