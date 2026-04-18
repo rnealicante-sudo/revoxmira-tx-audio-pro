@@ -56,7 +56,7 @@
 
       <!-- Nombre de sala -->
       <div class="mb-6">
-        <label class="block text-zinc-400 text-sm mb-2">Nombre de la sala (para identificar)</label>
+        <label class="block text-zinc-400 text-sm mb-2">Nombre de la sala</label>
         <input id="room-name" type="text" value="MiAudioHD" 
           class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-5 py-4 text-white focus:border-violet-500 outline-none">
       </div>
@@ -66,7 +66,7 @@
         INICIAR EMISIÓN ESTÉREO HD
       </button>
 
-      <!-- Panel de enlaces y compartir -->
+      <!-- Panel de enlaces -->
       <div id="enlaces-panel" class="hidden space-y-6">
         <div>
           <p class="text-xs text-zinc-400 mb-2">Enlace para el Receptor</p>
@@ -109,7 +109,7 @@
       try {
         const devices = await navigator.mediaDevices.enumerateDevices();
         const select = document.getElementById("micSelect");
-        select.innerHTML = '<option value="">Micrófono predeterminado</option>';
+        select.innerHTML = '<option value="">Micrófono predeterminado del sistema</option>';
         devices.forEach(device => {
           if (device.kind === "audioinput") {
             const opt = document.createElement("option");
@@ -118,9 +118,7 @@
             select.appendChild(opt);
           }
         });
-      } catch (e) {
-        console.warn("No se pudo listar micrófonos");
-      }
+      } catch (e) {}
     }
 
     async function iniciarEmision() {
@@ -131,10 +129,11 @@
       const base = "https://vdo.ninja";
       const gain = document.getElementById("gain-slider").value;
 
+      // Parámetros corregidos y optimizados
       const viewLink = `${base}/?view=${roomId}&proaudio=1&stereo=1&audiobitrate=256&clean=1`;
 
       document.getElementById("receptor-link").innerHTML = 
-        `<a href="${viewLink}" target="_blank" class="underline">${viewLink}</a>`;
+        `<a href="${viewLink}" target="_blank" class="underline break-all">${viewLink}</a>`;
 
       document.getElementById("enlaces-panel").classList.remove("hidden");
 
@@ -163,11 +162,11 @@
         document.getElementById("vu-container").classList.remove("hidden");
         startVUMeter();
       } catch (e) {
-        status.textContent = "Error al acceder al micrófono";
+        status.textContent = "Error al acceder al micrófono. Permite el acceso.";
         console.error(e);
       }
 
-      status.innerHTML = `✅ Emisión iniciada en <b>Estéreo HD</b><br>Sala: <span class="font-medium">${roomName}</span>`;
+      status.innerHTML = `✅ Emisión iniciada en <b>Estéreo HD 48kHz</b><br>Sala: <span class="font-medium">${roomName}</span>`;
     }
 
     function startVUMeter() {
@@ -185,7 +184,6 @@
       update();
     }
 
-    // Actualizar ganancia
     document.getElementById("gain-slider").addEventListener("input", function() {
       document.getElementById("gain-value").textContent = this.value + "x";
       if (gainNode) gainNode.gain.value = parseFloat(this.value);
@@ -193,14 +191,12 @@
 
     function copiarLink() {
       const link = document.getElementById("receptor-link").querySelector("a").href;
-      navigator.clipboard.writeText(link).then(() => {
-        alert("✅ Enlace copiado al portapapeles");
-      });
+      navigator.clipboard.writeText(link).then(() => alert("✅ Enlace copiado"));
     }
 
     function compartirWhatsApp() {
       const link = document.getElementById("receptor-link").querySelector("a").href;
-      const text = "Escucha mi audio en vivo (Estéreo HD):";
+      const text = "Escucha mi audio en vivo en estéreo HD:";
       window.open(`https://wa.me/?text=${encodeURIComponent(text + "\n" + link)}`, "_blank");
     }
 
