@@ -36,7 +36,7 @@
       <div id="emisor-panel">
         <div class="mb-6">
           <label class="block text-zinc-400 text-sm mb-2">Nombre de la sala</label>
-          <input id="room-name" type="text" value="MiSalaAudio" 
+          <input id="room-name" type="text" value="MiAudioHD" 
             class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-5 py-4 text-white focus:border-violet-500 outline-none">
         </div>
 
@@ -51,11 +51,11 @@
         <!-- VU Meter -->
         <div id="vu-container" class="hidden mb-8">
           <div class="flex justify-between text-xs text-emerald-400 mb-1.5">
-            <span>VU Meter - Nivel actual</span>
+            <span>VU Meter - Nivel de micrófono</span>
             <span id="vu-level">0%</span>
           </div>
           <div class="h-3 bg-zinc-800 rounded-full overflow-hidden">
-            <div id="vu-bar" class="h-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-violet-400 w-0 transition-all"></div>
+            <div id="vu-bar" class="h-full bg-gradient-to-r from-emerald-400 to-cyan-400 w-0 transition-all"></div>
           </div>
         </div>
 
@@ -110,20 +110,20 @@
 
     async function iniciarEmision() {
       const status = document.getElementById("status");
-      const roomName = document.getElementById("room-name").value.trim() || "RevoxMira";
+      const roomName = document.getElementById("room-name").value.trim() || "RevoxMiraHD";
       roomId = "revox-" + roomName.toLowerCase().replace(/[^a-z0-9]/g, '') + "-" + Math.random().toString(36).substring(2, 8);
 
       const base = "https://vdo.ninja";
-      const gain = document.getElementById("gain-slider").value;
+      const gain = parseFloat(document.getElementById("gain-slider").value);
 
-      // Parámetros optimizados para calidad estéreo HD (corregido)
-      const pushLink = `${base}/?push=${roomId}&proaudio=1&stereo=1&audiobitrate=256&gain=${gain}`;
+      // Parámetros optimizados y corregidos (proaudio + stereo en ambos lados)
+      const pushLink = `${base}/?push=${roomId}&proaudio=1&stereo=1&audiobitrate=256&gain=${gain}&aec=0&ns=0`;
       const viewLink = `${base}/?view=${roomId}&proaudio=1&stereo=1&audiobitrate=256`;
 
       document.getElementById("receptor-link").innerHTML = 
         `<a href="${viewLink}" target="_blank" class="underline break-all">${viewLink}</a>`;
 
-      // QR Code
+      // QR
       document.getElementById("qr-code").innerHTML = `
         <img src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(viewLink)}" 
              class="rounded-2xl shadow-2xl border border-zinc-700" alt="QR">
@@ -131,7 +131,7 @@
 
       document.getElementById("enlaces-panel").classList.remove("hidden");
 
-      // Iniciar VU Meter local
+      // Iniciar micrófono y VU Meter
       try {
         localStream = await navigator.mediaDevices.getUserMedia({
           audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
@@ -140,7 +140,7 @@
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
         const source = audioContext.createMediaStreamSource(localStream);
         gainNode = audioContext.createGain();
-        gainNode.gain.value = parseFloat(gain);
+        gainNode.gain.value = gain;
         analyser = audioContext.createAnalyser();
         analyser.fftSize = 128;
 
@@ -150,7 +150,7 @@
         document.getElementById("vu-container").classList.remove("hidden");
         startVUMeter();
       } catch (e) {
-        status.textContent = "Error al acceder al micrófono. Permite el acceso.";
+        status.textContent = "Error al acceder al micrófono. Por favor permite el acceso.";
         console.error(e);
       }
 
