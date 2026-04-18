@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>RevoxMira TX Audio Pro - Manual SDP</title>
+  <title>RevoxMira Audio Link • Estéreo HD</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
@@ -12,243 +12,193 @@
     .glass { background: rgba(255,255,255,0.08); backdrop-filter: blur(20px); }
     .mic-pulse { animation: pulse 1.8s infinite; }
     @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.25); } }
-    textarea { font-family: monospace; font-size: 13px; }
   </style>
 </head>
-<body class="bg-zinc-950 text-zinc-200 min-h-screen flex items-center justify-center p-4 dark">
-  <div class="max-w-2xl w-full space-y-8">
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-12 h-12 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-3xl flex items-center justify-center">
-          <i class="fa-solid fa-microphone text-3xl"></i>
-        </div>
-        <div>
-          <h1 class="text-4xl font-bold tracking-tighter">RevoxMira</h1>
-          <p class="text-violet-400 text-sm font-semibold">TX Audio Pro - Manual SDP</p>
-        </div>
+<body class="bg-zinc-950 text-zinc-200 min-h-screen flex items-center justify-center p-4">
+  <div class="max-w-md w-full space-y-8">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-3xl flex items-center justify-center shadow-2xl">
+        <i class="fa-solid fa-microphone text-3xl"></i>
       </div>
-      <button onclick="toggleTheme()" class="p-3 rounded-2xl hover:bg-zinc-900"><i id="theme-icon" class="fa-solid fa-moon text-xl"></i></button>
+      <div>
+        <h1 class="text-4xl font-bold tracking-tighter">RevoxMira</h1>
+        <p class="text-violet-400 font-semibold">Audio Link • Estéreo HD</p>
+      </div>
     </div>
 
     <div class="glass border border-zinc-700 rounded-3xl p-8">
       <div class="flex bg-zinc-900 rounded-2xl p-1 mb-8">
-        <button onclick="setMode(true)" id="btn-tx" class="flex-1 py-4 rounded-xl font-semibold">🎤 Soy el Transmisor</button>
-        <button onclick="setMode(false)" id="btn-rx" class="flex-1 py-4 rounded-xl font-semibold">🎧 Soy el Receptor</button>
+        <button onclick="setMode(true)" id="btn-emisor"
+          class="flex-1 py-4 rounded-xl font-semibold text-sm">📱 Soy el Emisor (Móvil)</button>
+        <button onclick="setMode(false)" id="btn-receptor"
+          class="flex-1 py-4 rounded-xl font-semibold text-sm">🖥️ Soy el Receptor</button>
       </div>
 
-      <!-- Transmisor -->
-      <div id="tx-panel">
-        <label class="block text-zinc-400 text-sm mb-2">Micrófono</label>
-        <select id="micSelect" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-5 py-4 mb-6"></select>
-
-        <button onclick="createOffer()" class="w-full bg-violet-600 hover:bg-violet-500 py-4 rounded-2xl font-semibold mb-4">
-          1. Crear Offer (SDP)
-        </button>
+      <!-- Modo Emisor -->
+      <div id="emisor-panel">
+        <div class="mb-6">
+          <label class="block text-zinc-400 text-sm mb-2">Nombre de la sala (opcional)</label>
+          <input id="room-name" type="text" placeholder="Mi Podcast en Vivo" 
+            class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-5 py-4 text-white focus:border-violet-500 outline-none">
+        </div>
 
         <div class="mb-6">
-          <p class="text-xs text-zinc-400 mb-2">Copia este Offer y pégalo en el Receptor:</p>
-          <textarea id="offer-sdp" rows="6" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl p-4 text-white resize-y" readonly></textarea>
+          <label class="block text-zinc-400 text-sm mb-2">Ganancia del micrófono</label>
+          <div class="flex items-center gap-4">
+            <input type="range" id="gain-slider" min="0" max="3" step="0.05" value="1" 
+              class="flex-1 accent-violet-500">
+            <span id="gain-value" class="w-12 text-right font-medium">1.0x</span>
+          </div>
         </div>
 
-        <button onclick="setAnswer()" class="w-full bg-emerald-600 hover:bg-emerald-500 py-4 rounded-2xl font-semibold">
-          3. Pegar Answer del Receptor
+        <!-- VU Meter -->
+        <div id="vu-container" class="hidden mb-8">
+          <div class="flex justify-between text-xs text-emerald-400 mb-1.5">
+            <span>VU Meter - Nivel de micrófono</span>
+            <span id="vu-level">0%</span>
+          </div>
+          <div class="h-3 bg-zinc-800 rounded-full overflow-hidden">
+            <div id="vu-bar" class="h-full bg-gradient-to-r from-emerald-400 to-cyan-400 w-0 transition-all"></div>
+          </div>
+        </div>
+
+        <button onclick="iniciarEmision()" 
+          class="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 py-5 rounded-2xl text-xl font-semibold shadow-lg">
+          INICIAR EMISIÓN EN ESTÉREO HD
         </button>
-        <textarea id="answer-input" rows="4" class="w-full mt-3 bg-zinc-900 border border-zinc-700 rounded-2xl p-4 text-white" placeholder="Pega aquí el Answer SDP del receptor"></textarea>
-      </div>
 
-      <!-- Receptor -->
-      <div id="rx-panel" class="hidden">
-        <button onclick="createAnswer()" class="w-full bg-emerald-600 hover:bg-emerald-500 py-4 rounded-2xl font-semibold mb-4">
-          2. Pegar Offer del Transmisor y Crear Answer
-        </button>
-        <textarea id="offer-input" rows="6" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl p-4 text-white" placeholder="Pega aquí el Offer SDP del transmisor"></textarea>
+        <div id="enlaces-panel" class="hidden mt-8 space-y-6">
+          <div>
+            <p class="text-xs text-zinc-400 mb-2">Enlace para el Receptor (ábrelo en el ordenador)</p>
+            <div id="receptor-link" class="bg-zinc-900 border border-zinc-700 rounded-2xl p-4 text-sm break-all font-mono text-violet-400"></div>
+            <button onclick="copiarLink()" class="mt-3 w-full py-3 bg-zinc-800 hover:bg-zinc-700 rounded-2xl text-sm font-medium">
+              Copiar enlace
+            </button>
+          </div>
 
-        <div class="mt-6">
-          <p class="text-xs text-zinc-400 mb-2">Copia este Answer y pégalo en el Transmisor:</p>
-          <textarea id="answer-sdp" rows="6" class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl p-4 text-white resize-y" readonly></textarea>
+          <div class="text-center">
+            <p class="text-xs text-emerald-400">O escanea este QR desde el ordenador</p>
+            <div id="qr-code" class="mx-auto mt-4 inline-block"></div>
+          </div>
         </div>
       </div>
 
-      <!-- VU Meters -->
-      <div class="mt-10 space-y-6">
-        <div id="tx-meter" class="hidden">
-          <div class="flex justify-between text-xs text-emerald-400 mb-1"><span>TX - Micrófono</span><span id="tx-vol">0%</span></div>
-          <div class="h-2.5 bg-zinc-800 rounded-full"><div id="tx-bar" class="h-full bg-emerald-400 w-0 transition-all"></div></div>
-        </div>
-        <div id="rx-meter" class="hidden">
-          <div class="flex justify-between text-xs text-violet-400 mb-1"><span>RX - Audio recibido</span><span id="rx-vol">0%</span></div>
-          <div class="h-2.5 bg-zinc-800 rounded-full"><div id="rx-bar" class="h-full bg-violet-400 w-0 transition-all"></div></div>
-        </div>
+      <!-- Modo Receptor -->
+      <div id="receptor-panel" class="hidden text-center py-12">
+        <div class="text-6xl mb-6">🎧</div>
+        <p class="text-xl text-emerald-400 font-medium">Esperando audio estéreo HD...</p>
+        <p class="text-zinc-500 mt-4">Abre el enlace que te envió el emisor</p>
       </div>
 
-      <div class="flex gap-4 mt-8">
-        <button onclick="stopAll()" class="flex-1 bg-red-600 hover:bg-red-700 py-4 rounded-2xl font-semibold">
-          Detener todo
-        </button>
-      </div>
+      <div id="status" class="mt-8 text-center text-sm font-medium min-h-[60px] text-emerald-400"></div>
+    </div>
 
-      <div id="status" class="mt-8 text-center text-sm min-h-[60px] p-5 rounded-2xl bg-zinc-900 border border-zinc-700"></div>
-      <div id="live" class="hidden mt-4 flex items-center justify-center gap-3 text-emerald-400">
-        <div class="w-4 h-4 bg-emerald-500 rounded-full mic-pulse"></div>
-        <span class="font-medium">TRANSMITIENDO EN VIVO</span>
-      </div>
+    <div class="text-center text-xs text-zinc-500">
+      Estéreo 48kHz • Baja latencia • Inspirado en VDO.Ninja
     </div>
   </div>
 
   <script>
-    let pc = null;
+    let roomId = "";
     let localStream = null;
-    let remoteAudio = null;
-    let isTransmitter = true;
-    let rxGainNode = null;
-    let rxAnalyser = null;
+    let audioContext = null;
+    let analyser = null;
+    let gainNode = null;
+    let animationFrame = null;
 
-    function setMode(tx) {
-      isTransmitter = tx;
-      document.getElementById("tx-panel").classList.toggle("hidden", !tx);
-      document.getElementById("rx-panel").classList.toggle("hidden", tx);
-      document.getElementById("btn-tx").classList.toggle("bg-zinc-800", !tx);
-      document.getElementById("btn-rx").classList.toggle("bg-zinc-800", tx);
+    function setMode(isEmisor) {
+      document.getElementById("emisor-panel").classList.toggle("hidden", !isEmisor);
+      document.getElementById("receptor-panel").classList.toggle("hidden", isEmisor);
+      document.getElementById("btn-emisor").classList.toggle("bg-zinc-800", !isEmisor);
+      document.getElementById("btn-receptor").classList.toggle("bg-zinc-800", isEmisor);
     }
 
-    async function listarMicrofonos() {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const select = document.getElementById("micSelect");
-      select.innerHTML = '<option value="">Micrófono predeterminado</option>';
-      devices.forEach(d => {
-        if (d.kind === "audioinput") {
-          const opt = document.createElement("option");
-          opt.value = d.deviceId;
-          opt.text = d.label || `Micrófono ${select.length}`;
-          select.appendChild(opt);
-        }
-      });
-    }
-
-    async function createOffer() {
+    async function iniciarEmision() {
       const status = document.getElementById("status");
-      status.textContent = "Creando conexión...";
+      const roomName = document.getElementById("room-name").value.trim() || "RevoxMira";
 
-      pc = new RTCPeerConnection({
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:openrelay.metered.ca:80" }
-        ]
-      });
+      roomId = "revox-" + roomName.toLowerCase().replace(/\s+/g, '-') + "-" + Math.random().toString(36).substring(2, 8);
 
-      const micId = document.getElementById("micSelect").value;
-      localStream = await navigator.mediaDevices.getUserMedia({
-        audio: { deviceId: micId ? { exact: micId } : undefined, echoCancellation: false, noiseSuppression: false }
-      });
+      const base = "https://vdo.ninja";
 
-      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+      const pushLink = `${base}/?push=${roomId}&proaudio&stereo&audiobitrate=256&gain=${document.getElementById("gain-slider").value}`;
+      const viewLink = `${base}/?view=${roomId}&proaudio&stereo&audiobitrate=256`;
 
-      // VU Meter TX
-      document.getElementById("tx-meter").classList.remove("hidden");
-      startVUMeter(localStream, "tx-bar", "tx-vol");
+      // Mostrar enlaces
+      document.getElementById("receptor-link").innerHTML = 
+        `<a href="${viewLink}" target="_blank" class="underline">${viewLink}</a>`;
 
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
+      // Generar QR
+      const qrContainer = document.getElementById("qr-code");
+      qrContainer.innerHTML = `
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(viewLink)}" 
+             class="rounded-2xl shadow-xl border border-zinc-700" alt="QR Code">
+      `;
 
-      document.getElementById("offer-sdp").value = pc.localDescription.sdp;
-      status.textContent = "Offer creado. Copia el SDP de arriba y pégalo en el Receptor.";
-    }
+      document.getElementById("enlaces-panel").classList.remove("hidden");
 
-    async function createAnswer() {
-      const offerSDP = document.getElementById("offer-input").value.trim();
-      if (!offerSDP) {
-        alert("Primero pega el Offer del Transmisor");
-        return;
-      }
+      // Iniciar VU Meter y audio local (para monitor)
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+        });
 
-      pc = new RTCPeerConnection({
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:openrelay.metered.ca:80" }
-        ]
-      });
-
-      pc.ontrack = (event) => {
-        remoteAudio = new Audio();
-        remoteAudio.srcObject = event.streams[0];
-        remoteAudio.autoplay = true;
-        remoteAudio.playsInline = true;
-        remoteAudio.play();
-
-        document.getElementById("live").classList.remove("hidden");
-        document.getElementById("rx-meter").classList.remove("hidden");
-        setupRXAudio(event.streams[0]);
-        document.getElementById("status").textContent = "✅ Audio recibido correctamente";
-      };
-
-      await pc.setRemoteDescription({ type: "offer", sdp: offerSDP });
-
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-
-      document.getElementById("answer-sdp").value = pc.localDescription.sdp;
-      document.getElementById("status").textContent = "Answer creado. Copia el SDP de arriba y pégalo en el Transmisor.";
-    }
-
-    async function setAnswer() {
-      const answerSDP = document.getElementById("answer-input").value.trim();
-      if (!answerSDP || !pc) {
-        alert("Primero crea el Offer y pega el Answer aquí");
-        return;
-      }
-
-      await pc.setRemoteDescription({ type: "answer", sdp: answerSDP });
-      document.getElementById("status").textContent = "Conexión establecida. Deberías oír audio en el Receptor.";
-      document.getElementById("live").classList.remove("hidden");
-    }
-
-    function setupRXAudio(stream) {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const source = ctx.createMediaStreamSource(stream);
-      rxGainNode = ctx.createGain();
-      rxGainNode.gain.value = 1;
-      rxAnalyser = ctx.createAnalyser();
-      rxAnalyser.fftSize = 128;
-      source.connect(rxGainNode);
-      rxGainNode.connect(rxAnalyser);
-
-      startVUMeter(rxAnalyser, "rx-bar", "rx-vol", true);
-    }
-
-    function startVUMeter(input, barId, volId, isAnalyser = false) {
-      let analyser = input;
-      if (!isAnalyser) {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        analyser = ctx.createAnalyser();
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const source = audioContext.createMediaStreamSource(localStream);
+        gainNode = audioContext.createGain();
+        gainNode.gain.value = parseFloat(document.getElementById("gain-slider").value);
+        analyser = audioContext.createAnalyser();
         analyser.fftSize = 128;
-        ctx.createMediaStreamSource(input).connect(analyser);
+
+        source.connect(gainNode);
+        gainNode.connect(analyser);
+
+        document.getElementById("vu-container").classList.remove("hidden");
+        startVUMeter();
+      } catch (err) {
+        console.error(err);
+        status.textContent = "Error al acceder al micrófono";
       }
-      const data = new Uint8Array(analyser.frequencyBinCount);
-      function loop() {
-        analyser.getByteFrequencyData(data);
+
+      status.innerHTML = `✅ Emisión iniciada en <span class="text-emerald-400">Estéreo HD</span><br>
+                          Sala: <span class="font-medium">${roomName}</span>`;
+    }
+
+    function startVUMeter() {
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      function update() {
+        analyser.getByteFrequencyData(dataArray);
         let sum = 0;
-        for (let v of data) sum += v;
-        const percent = Math.min(100, Math.floor((sum / data.length) * 1.8));
-        document.getElementById(barId).style.width = percent + "%";
-        document.getElementById(volId).textContent = percent + "%";
-        requestAnimationFrame(loop);
+        for (let val of dataArray) sum += val;
+        const percent = Math.min(100, Math.floor((sum / dataArray.length) * 1.8));
+
+        document.getElementById("vu-bar").style.width = percent + "%";
+        document.getElementById("vu-level").textContent = percent + "%";
+        animationFrame = requestAnimationFrame(update);
       }
-      loop();
+      update();
+    }
+
+    // Actualizar ganancia en tiempo real
+    document.getElementById("gain-slider").addEventListener("input", function() {
+      document.getElementById("gain-value").textContent = this.value + "x";
+      if (gainNode) gainNode.gain.value = parseFloat(this.value);
+    });
+
+    function copiarLink() {
+      const linkElement = document.getElementById("receptor-link").querySelector("a");
+      if (linkElement) {
+        navigator.clipboard.writeText(linkElement.href);
+        alert("✅ Enlace copiado correctamente. Pégalo en tu ordenador.");
+      }
     }
 
     function stopAll() {
-      if (localStream) localStream.getTracks().forEach(t => t.stop());
-      if (pc) pc.close();
-      if (remoteAudio) remoteAudio.pause();
-      document.getElementById("live").classList.add("hidden");
-      document.getElementById("tx-meter").classList.add("hidden");
-      document.getElementById("rx-meter").classList.add("hidden");
-      document.getElementById("status").textContent = "Todo detenido";
-    }
-
-    function copyLink() {
-      navigator.clipboard.writeText(window.location.href);
-      alert("Enlace copiado. Ábrelo en otra pestaña o dispositivo como Receptor.");
+      if (localStream) localStream.getTracks().forEach(track => track.stop());
+      if (audioContext) audioContext.close();
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+      document.getElementById("vu-container").classList.add("hidden");
+      document.getElementById("status").textContent = "Emisión detenida";
     }
 
     function toggleTheme() {
@@ -257,7 +207,6 @@
 
     window.onload = () => {
       setMode(true);
-      listarMicrofonos();
     };
   </script>
 </body>
