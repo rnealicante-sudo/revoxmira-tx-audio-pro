@@ -1,0 +1,8 @@
+{
+  "name": "revox TX",
+  "description": "Una herramienta de transmisión de audio de alta calidad inspirada en VDO.Ninja, con control de ganancia y vúmetros en tiempo real.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
