@@ -54,42 +54,31 @@
         </div>
       </div>
 
-      <!-- Nombre de sala -->
-      <div class="mb-6">
-        <label class="block text-zinc-400 text-sm mb-2">Nombre de la sala</label>
-        <input id="room-name" type="text" value="MiAudioHD" 
-          class="w-full bg-zinc-900 border border-zinc-700 rounded-2xl px-5 py-4 text-white focus:border-violet-500 outline-none">
-      </div>
-
       <button onclick="iniciarEmision()" 
         class="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 py-5 rounded-2xl text-xl font-semibold shadow-lg mb-6">
         INICIAR EMISIÓN ESTÉREO HD
       </button>
 
-      <!-- Panel de enlaces -->
       <div id="enlaces-panel" class="hidden space-y-6">
         <div>
-          <p class="text-xs text-zinc-400 mb-2">Enlace para el Receptor</p>
+          <p class="text-xs text-zinc-400 mb-2">Enlace para el Receptor (ábrelo en el ordenador)</p>
           <div id="receptor-link" class="bg-zinc-900 border border-zinc-700 rounded-2xl p-4 text-sm break-all font-mono text-violet-300"></div>
         </div>
 
         <div class="grid grid-cols-3 gap-3">
           <button onclick="compartirWhatsApp()" class="py-4 bg-green-600 hover:bg-green-500 rounded-2xl flex flex-col items-center gap-1 text-sm">
-            <i class="fa-brands fa-whatsapp text-2xl"></i>
-            <span>WhatsApp</span>
+            <i class="fa-brands fa-whatsapp text-2xl"></i><span>WhatsApp</span>
           </button>
           <button onclick="compartirTelegram()" class="py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl flex flex-col items-center gap-1 text-sm">
-            <i class="fa-brands fa-telegram text-2xl"></i>
-            <span>Telegram</span>
+            <i class="fa-brands fa-telegram text-2xl"></i><span>Telegram</span>
           </button>
           <button onclick="compartirEmail()" class="py-4 bg-zinc-700 hover:bg-zinc-600 rounded-2xl flex flex-col items-center gap-1 text-sm">
-            <i class="fa-solid fa-envelope text-2xl"></i>
-            <span>Email</span>
+            <i class="fa-solid fa-envelope text-2xl"></i><span>Email</span>
           </button>
         </div>
 
         <button onclick="copiarLink()" class="w-full py-3 bg-zinc-800 hover:bg-zinc-700 rounded-2xl text-sm font-medium">
-          Copiar enlace manualmente
+          Copiar enlace
         </button>
       </div>
 
@@ -109,7 +98,7 @@
       try {
         const devices = await navigator.mediaDevices.enumerateDevices();
         const select = document.getElementById("micSelect");
-        select.innerHTML = '<option value="">Micrófono predeterminado del sistema</option>';
+        select.innerHTML = '<option value="">Micrófono predeterminado</option>';
         devices.forEach(device => {
           if (device.kind === "audioinput") {
             const opt = document.createElement("option");
@@ -129,8 +118,8 @@
       const base = "https://vdo.ninja";
       const gain = document.getElementById("gain-slider").value;
 
-      // Parámetros corregidos y optimizados
-      const viewLink = `${base}/?view=${roomId}&proaudio=1&stereo=1&audiobitrate=256&clean=1`;
+      // Parámetros más agresivos y estables (corregido)
+      const viewLink = `${base}/?view=${roomId}&proaudio=1&stereo=1&audiobitrate=256&clean=1&autostart=1&videobitrate=0`;
 
       document.getElementById("receptor-link").innerHTML = 
         `<a href="${viewLink}" target="_blank" class="underline break-all">${viewLink}</a>`;
@@ -145,7 +134,9 @@
             deviceId: micId ? { exact: micId } : undefined,
             echoCancellation: false,
             noiseSuppression: false,
-            autoGainControl: false
+            autoGainControl: false,
+            sampleRate: 48000,
+            channelCount: 2
           }
         });
 
@@ -161,12 +152,12 @@
 
         document.getElementById("vu-container").classList.remove("hidden");
         startVUMeter();
+
+        status.innerHTML = `✅ Emisión iniciada en <b>Estéreo 48kHz</b><br>Comparte el enlace con el receptor`;
       } catch (e) {
         status.textContent = "Error al acceder al micrófono. Permite el acceso.";
         console.error(e);
       }
-
-      status.innerHTML = `✅ Emisión iniciada en <b>Estéreo HD 48kHz</b><br>Sala: <span class="font-medium">${roomName}</span>`;
     }
 
     function startVUMeter() {
@@ -196,7 +187,7 @@
 
     function compartirWhatsApp() {
       const link = document.getElementById("receptor-link").querySelector("a").href;
-      const text = "Escucha mi audio en vivo en estéreo HD:";
+      const text = "Escucha mi audio en vivo (Estéreo HD):";
       window.open(`https://wa.me/?text=${encodeURIComponent(text + "\n" + link)}`, "_blank");
     }
 
@@ -207,7 +198,7 @@
 
     function compartirEmail() {
       const link = document.getElementById("receptor-link").querySelector("a").href;
-      const subject = "Enlace de audio en vivo - RevoxMira";
+      const subject = "Enlace de audio en vivo";
       const body = `Hola,\n\nAquí tienes el enlace para escuchar mi audio en vivo en estéreo HD:\n\n${link}`;
       window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     }
